@@ -191,11 +191,14 @@ export default function App() {
     if (ms >= 300_000 && ms >= nextGagRef.current) {
       nextGagRef.current = ms + 15_000 + Math.random() * 10_000
       const type = GAG_TYPES[Math.floor(Math.random() * GAG_TYPES.length)]
+      const decoys = Array.from({ length: 2 + Math.floor(Math.random() * 3) }, () => ({
+        x: 5 + Math.random() * 60,
+        y: 8 + Math.random() * 55,
+      }))
       setGag({
         type,
         until: ms + (type === 'decoy' ? 7_000 : 4_500),
-        x: 8 + Math.random() * 55,
-        y: 12 + Math.random() * 45,
+        decoys,
       })
     }
     setGag(g => (g && ms > g.until ? null : g))
@@ -313,12 +316,16 @@ export default function App() {
   }
 
   // Escalating mischief, driven by elapsed time: slow drift from 10s,
-  // slow shrink from 20s, both creeping up the longer you hold
+  // slow shrink from 20s, both creeping up the longer you hold.
+  // At 7 minutes the button shrinks another 10% and drifts 10% faster
+  // (phase ramps keep the motion continuous — no teleporting).
   const s = elapsed / 1000
+  const over7 = Math.max(0, s - 420)
   const driftAmp = s > 10 ? Math.min((s - 10) * 0.9, 80) : 0
-  const driftX = driftAmp * Math.sin(s * 0.5)
-  const driftY = driftAmp * 0.7 * Math.sin(s * 0.34 + 2)
-  const scale = s > 20 ? Math.max(1 - (s - 20) * 0.0016, 0.7) : 1
+  const driftX = driftAmp * Math.sin(s * 0.5 + over7 * 0.05)
+  const driftY = driftAmp * 0.7 * Math.sin(s * 0.34 + over7 * 0.034 + 2)
+  const lateShrink = over7 > 0 ? Math.max(0.9, 1 - over7 * 0.01) : 1
+  const scale = (s > 20 ? Math.max(1 - (s - 20) * 0.0016, 0.7) : 1) * lateShrink
 
   const gagStyle = {}
   let label = holding ? 'HOLD' : 'HOLD ME'
@@ -374,14 +381,15 @@ export default function App() {
         ))}
       </div>
 
-      {gag?.type === 'decoy' && (
+      {gag?.type === 'decoy' && gag.decoys.map((d, i) => (
         <button
+          key={i}
           className="decoy-button"
-          style={{ left: `${gag.x}%`, top: `${gag.y}%` }}
+          style={{ left: `${d.x}%`, top: `${d.y}%` }}
         >
           HOLD ME
         </button>
-      )}
+      ))}
 
       {!holding && (
         <nav className="bottom-row">
