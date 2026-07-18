@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import Results from './Results.jsx'
 import Leaderboard from './Leaderboard.jsx'
 import { fmtTime, vibrate } from './format.js'
+import { drawNotification } from './notifications.js'
 
 const MILESTONES = [
   { at: 5_000, text: 'off you go then', buzz: 20 },
@@ -27,18 +28,6 @@ const MILESTONES = [
   { at: 900_000, text: 'genuinely impressed. slightly worried', buzz: 20 },
   { at: 1_200_000, text: 'your ancestors crossed oceans for this', buzz: 20 },
   { at: 1_800_000, text: 'put it down and go outside', buzz: [40, 60, 40] },
-]
-
-const FAKE_NOTIFS = [
-  { icon: '📞', title: 'Mum', body: 'Missed call (2)' },
-  { icon: '🔋', title: 'Battery', body: '3% remaining. Probably.' },
-  { icon: '💬', title: 'Dave', body: 'you still holding that button lol' },
-  { icon: '📰', title: 'Breaking', body: 'Local person still holding button' },
-  { icon: '🫖', title: 'Kettle', body: 'Your brew has gone cold' },
-  { icon: '❤️', title: 'New match', body: "It's the button. It likes you too." },
-  { icon: '📦', title: 'Delivery', body: 'Your parcel is 2 stops away' },
-  { icon: '🏆', title: 'Achievement', body: 'Tap to claim your prize (do not)' },
-  { icon: '🐕', title: 'Reminder', body: 'The dog wants out' },
 ]
 
 export default function App() {
@@ -103,7 +92,7 @@ export default function App() {
     // Fake notifications after 2 minutes
     if (ms >= 120_000 && ms >= nextNotifRef.current) {
       nextNotifRef.current = ms + 12_000 + Math.random() * 10_000
-      const n = FAKE_NOTIFS[Math.floor(Math.random() * FAKE_NOTIFS.length)]
+      const n = drawNotification()
       const id = ++notifIdRef.current
       setNotifs(list => [...list.slice(-2), { ...n, id, top: 8 + Math.random() * 30 }])
       setTimeout(() => setNotifs(list => list.filter(x => x.id !== id)), 6000)
