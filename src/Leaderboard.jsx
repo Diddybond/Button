@@ -24,7 +24,13 @@ export default function Leaderboard({ onBack }) {
           {rows.map((r, i) => (
             <li key={i} className={i < 3 ? 'podium' : ''}>
               <span className="rank">#{i + 1}</span>
-              <span className="bname">{r.name} {countryFlag(r.country)}</span>
+              <span className="bname">
+                {r.name} {countryFlag(r.country)}
+                {r.linkedin && (
+                  <a className="li-badge" href={r.linkedin} target="_blank" rel="noopener nofollow"
+                    title={`${r.name} on LinkedIn`}>in</a>
+                )}
+              </span>
               <span className="btime">{fmtTime(r.ms)}</span>
             </li>
           ))}

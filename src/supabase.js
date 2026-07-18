@@ -10,7 +10,7 @@ export const supabase = createClient(url, key, {
 export async function fetchTop100() {
   const { data, error } = await supabase
     .from('button_scores')
-    .select('name, ms, country, created_at')
+    .select('name, ms, country, linkedin, created_at')
     .order('ms', { ascending: false })
     .limit(100)
   if (error) throw error
@@ -23,11 +23,12 @@ export async function fetchRank(ms) {
   return data
 }
 
-export async function submitScore(name, ms, country) {
+export async function submitScore(name, ms, country, linkedin) {
   const { data, error } = await supabase.rpc('submit_button_score', {
     p_name: name,
     p_ms: ms,
     p_country: country || null,
+    p_linkedin: linkedin || null,
   })
   if (error) throw error
   return data // { id, rank }

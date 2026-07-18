@@ -170,12 +170,43 @@ body {
 .sub-line { color: var(--dim); font-size: 1rem; }
 .sub-line strong { color: var(--ink); }
 
-.post-row {
+.post-block {
   display: flex;
+  flex-direction: column;
   gap: 8px;
   margin-top: 18px;
   width: 100%;
   max-width: 340px;
+  align-items: stretch;
+}
+.post-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.linkedin-input {
+  background: var(--card);
+  border: 1px solid #2a2731;
+  border-radius: 12px;
+  color: var(--ink);
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.linkedin-input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+.li-badge {
+  display: inline-block;
+  background: #0a66c2;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  border-radius: 4px;
+  padding: 1px 5px 2px;
+  margin-left: 6px;
+  text-decoration: none;
+  vertical-align: middle;
 }
 .post-row input {
   flex: 1;

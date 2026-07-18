@@ -8,6 +8,7 @@ export default function Results({ run, best, onAgain, onBoard }) {
   const isPB = run.ms >= best
   const [rank, setRank] = useState(null)
   const [name, setName] = useState(() => localStorage.getItem('htb_name') || '')
+  const [linkedin, setLinkedin] = useState(() => localStorage.getItem('htb_linkedin') || '')
   const [posted, setPosted] = useState(null) // { rank }
   const [posting, setPosting] = useState(false)
   const [error, setError] = useState(null)
@@ -27,11 +28,18 @@ export default function Results({ run, best, onAgain, onBoard }) {
       setError('Name needs to be 3–12 characters.')
       return
     }
+    let li = linkedin.trim()
+    if (li && /^(www\.)?linkedin\.com\//.test(li)) li = 'https://' + li
+    if (li && !/^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9\-_%.]{3,100}\/?$/.test(li)) {
+      setError('LinkedIn link should look like linkedin.com/in/yourname — or leave it blank.')
+      return
+    }
     setPosting(true)
     setError(null)
     try {
-      const res = await submitScore(n, run.ms, guessCountry())
+      const res = await submitScore(n, run.ms, guessCountry(), li || null)
       localStorage.setItem('htb_name', n)
+      if (li) localStorage.setItem('htb_linkedin', li)
       setPosted(res)
       vibrate(30)
     } catch (e) {
@@ -81,19 +89,30 @@ export default function Results({ run, best, onAgain, onBoard }) {
       </a>
 
       {!posted ? (
-        <div className="post-row">
+        <div className="post-block">
+          <div className="post-row">
+            <input
+              value={name}
+              onChange={e => setName(e.target.value.slice(0, 12))}
+              placeholder="Your name (3–12)"
+              maxLength={12}
+              autoComplete="off"
+              enterKeyHint="go"
+              onKeyDown={e => { if (e.key === 'Enter') post() }}
+            />
+            <button className="accent-btn" onClick={post} disabled={posting}>
+              {posting ? 'Posting…' : 'Post score'}
+            </button>
+          </div>
           <input
-            value={name}
-            onChange={e => setName(e.target.value.slice(0, 12))}
-            placeholder="Your name (3–12)"
-            maxLength={12}
+            className="linkedin-input"
+            value={linkedin}
+            onChange={e => setLinkedin(e.target.value.slice(0, 120))}
+            placeholder="LinkedIn profile link (optional, shown on the board)"
             autoComplete="off"
-            enterKeyHint="go"
+            inputMode="url"
             onKeyDown={e => { if (e.key === 'Enter') post() }}
           />
-          <button className="accent-btn" onClick={post} disabled={posting}>
-            {posting ? 'Posting…' : 'Post score'}
-          </button>
         </div>
       ) : (
         <p className="posted-note">On the board as <strong>{name.trim()}</strong>, rank #{posted.rank}.</p>
