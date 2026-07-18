@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import { fmtTime, guessCountry, vibrate } from './format.js'
 import { fetchRank, submitScore } from './supabase.js'
+import { timeToTitle } from './titles.js'
+import { makeShareCard } from './sharecard.js'
 
 const GAME_URL = typeof window !== 'undefined' ? window.location.origin : ''
 
-export default function Results({ run, best, onAgain, onBoard }) {
-  const isPB = run.ms >= best
+export default function Results({ run, best, streak, onAgain, onBoard }) {
+  const isPB = run.mode === 'solo' && run.ms >= best
+  const title = timeToTitle(run.ms)
   const [rank, setRank] = useState(null)
   const [name, setName] = useState(() => localStorage.getItem('htb_name') || '')
   const [linkedin, setLinkedin] = useState(() => localStorage.getItem('htb_linkedin') || '')
@@ -13,14 +16,16 @@ export default function Results({ run, best, onAgain, onBoard }) {
   const [posting, setPosting] = useState(false)
   const [error, setError] = useState(null)
   const [shared, setShared] = useState(false)
+  const [cardBusy, setCardBusy] = useState(false)
 
   useEffect(() => {
     let live = true
-    fetchRank(run.ms).then(r => { if (live) setRank(r) }).catch(() => {})
+    fetchRank(run.ms, run.mode).then(r => { if (live) setRank(r) }).catch(() => {})
     return () => { live = false }
-  }, [run.ms])
+  }, [run.ms, run.mode])
 
   const shownRank = posted?.rank ?? rank
+  const beatChallenge = run.challenge && run.ms >= run.challenge.beat
 
   async function post() {
     const n = name.trim()
@@ -37,7 +42,7 @@ export default function Results({ run, best, onAgain, onBoard }) {
     setPosting(true)
     setError(null)
     try {
-      const res = await submitScore(n, run.ms, guessCountry(), li || null)
+      const res = await submitScore(n, run.ms, guessCountry(), li || null, run.mode)
       localStorage.setItem('htb_name', n)
       if (li) localStorage.setItem('htb_linkedin', li)
       setPosted(res)
@@ -47,6 +52,7 @@ export default function Results({ run, best, onAgain, onBoard }) {
       if (msg.includes('NAME_PROFANITY')) setError("That name's not going on the board. Try another.")
       else if (msg.includes('RATE_LIMITED')) setError('Steady on. Too many posts — try again in a few minutes.')
       else if (msg.includes('NAME_CHARS')) setError('Letters, numbers, spaces and - _ . only.')
+      else if (msg.includes('LINKEDIN_INVALID')) setError('That LinkedIn link doesn’t look right — linkedin.com/in/yourname or blank.')
       else if (msg.includes('TIME_TOO_SHORT')) setError('Runs under a second don’t make the board.')
       else setError('Couldn’t post that. Give it another go.')
     } finally {
@@ -54,9 +60,15 @@ export default function Results({ run, best, onAgain, onBoard }) {
     }
   }
 
+  function challengeUrl() {
+    const from = encodeURIComponent(name.trim() || localStorage.getItem('htb_name') || 'A mate')
+    return `${GAME_URL}/?beat=${run.ms}&from=${from}`
+  }
+
   async function share() {
     const rankBit = shownRank ? ` Rank #${shownRank} in the world.` : ''
-    const text = `I held the button for ${fmtTime(run.ms)} \u{1F624}${rankBit} Think you can beat me? ${GAME_URL} — free to play, sponsored by rifkinandlivesey.co.uk`
+    const duoBit = run.mode === 'duo' ? ' (two-thumb mode)' : ''
+    const text = `I held the button for ${fmtTime(run.ms)}${duoBit} \u{1F624} "${title}".${rankBit} Think you can beat me? ${challengeUrl()} — free to play, sponsored by rifkinandlivesey.co.uk`
     try {
       if (navigator.share) {
         await navigator.share({ text })
@@ -70,16 +82,46 @@ export default function Results({ run, best, onAgain, onBoard }) {
     }
   }
 
+  async function shareCard() {
+    setCardBusy(true)
+    try {
+      const blob = await makeShareCard({ ms: run.ms, rank: shownRank, title, reason: run.reason })
+      const file = new File([blob], `hold-the-button-${fmtTime(run.ms).replace(/[:.]/g, '-')}.png`, { type: 'image/png' })
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text: `Think you can beat me? ${challengeUrl()}` })
+      } else {
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(blob)
+        a.download = file.name
+        a.click()
+        setTimeout(() => URL.revokeObjectURL(a.href), 10_000)
+      }
+    } catch {
+      /* cancelled or unsupported — no drama */
+    } finally {
+      setCardBusy(false)
+    }
+  }
+
   return (
     <div className="results">
       <p className="verdict">
         {run.reason === 'focus' ? 'You looked away. The button noticed.' : 'You let go.'}
       </p>
       <div className="final-time">{fmtTime(run.ms)}</div>
+      <p className="title-line">“{title}”{run.mode === 'duo' && ' · two-thumb mode'}</p>
       <p className="sub-line">
-        {isPB ? 'New personal best.' : <>Personal best: <strong>{fmtTime(best)}</strong></>}
-        {shownRank != null && <> &nbsp;·&nbsp; Rank <strong>#{shownRank}</strong> in the world</>}
+        {isPB ? 'New personal best.' : run.mode === 'solo' ? <>Personal best: <strong>{fmtTime(best)}</strong></> : null}
+        {shownRank != null && <> &nbsp;·&nbsp; Rank <strong>#{shownRank}</strong> {run.mode === 'duo' ? 'in two-thumb' : 'in the world'}</>}
+        {streak > 1 && <> &nbsp;·&nbsp; 🔥 {streak}-day streak</>}
       </p>
+      {run.challenge && (
+        <p className="challenge-result">
+          {beatChallenge
+            ? <>That&apos;s <strong>{run.challenge.from}</strong> beaten. Send it back.</>
+            : <><strong>{run.challenge.from}</strong> survives — you were {fmtTime(run.challenge.beat - run.ms)} short.</>}
+        </p>
+      )}
 
       <a className="sponsor-card" href="https://rifkinandlivesey.co.uk" target="_blank" rel="noopener">
         <span className="sp-label">Sponsored by</span>
@@ -120,7 +162,10 @@ export default function Results({ run, best, onAgain, onBoard }) {
       {error && <p className="error">{error}</p>}
 
       <button className="accent-btn share-btn" onClick={share}>
-        {shared ? 'Copied. Go brag.' : 'Share your time'}
+        {shared ? 'Copied. Go brag.' : 'Challenge a mate'}
+      </button>
+      <button className="ghost-btn" onClick={shareCard} disabled={cardBusy}>
+        {cardBusy ? 'Making your card…' : 'Get your score card'}
       </button>
 
       <div className="results-nav">

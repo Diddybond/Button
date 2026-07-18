@@ -97,6 +97,67 @@ body {
   box-shadow: 0 4px 0 var(--accent-dark), 0 10px 30px rgba(255, 90, 54, 0.5);
 }
 
+/* duo mode: two smaller buttons side by side */
+.duo .button-zone { gap: 4vw; }
+.duo .big-button {
+  width: min(42vw, 42dvh, 300px);
+  height: min(42vw, 42dvh, 300px);
+  font-size: clamp(1rem, 4.5vw, 1.6rem);
+}
+.duo-hint { color: var(--dim); font-size: 0.85rem; margin-bottom: 6px; }
+
+.decoy-button {
+  position: fixed;
+  width: min(34vw, 200px);
+  height: min(34vw, 200px);
+  border-radius: 50%;
+  border: none;
+  background: radial-gradient(circle at 35% 30%, #ff7c5c, var(--accent) 55%, var(--accent-dark));
+  box-shadow: 0 8px 0 var(--accent-dark), 0 16px 40px rgba(255, 90, 54, 0.35);
+  color: #fff;
+  font-weight: 900;
+  font-size: clamp(0.9rem, 4vw, 1.3rem);
+  letter-spacing: 0.05em;
+  z-index: 9;
+  touch-action: none;
+  animation: pop 0.3s ease-out;
+}
+
+.holders-line { color: var(--dim); font-size: 0.85rem; margin-top: 8px; }
+.challenge-line { color: var(--ink); }
+.challenge-line strong { color: var(--accent); }
+.challenge-result { color: var(--ink); margin-top: 10px; font-size: 1.05rem; }
+.challenge-result strong { color: var(--accent); }
+.title-line { color: var(--accent); font-weight: 800; font-size: 1.15rem; margin-bottom: 4px; }
+
+.ghost-btn {
+  background: none;
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 1rem;
+  padding: 12px 18px;
+  margin-top: 10px;
+  width: 100%;
+  max-width: 340px;
+  cursor: pointer;
+}
+.ghost-btn:disabled { opacity: 0.6; }
+
+.tab-row { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+.tab {
+  background: var(--card);
+  border: 1px solid #2a2731;
+  border-radius: 999px;
+  color: var(--dim);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 7px 14px;
+  cursor: pointer;
+}
+.tab.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+
 /* ---------- fake notifications ---------- */
 .fake-notif {
   position: fixed;
