@@ -214,6 +214,18 @@ export default function App() {
     if (holdingRef.current) endRunRef.current('release')
   }, [])
 
+  // Touching anywhere that isn't a game button ends the run. Yes, that
+  // includes the fake notifications and the decoy. Especially those.
+  useEffect(() => {
+    const onStray = (e) => {
+      if (!holdingRef.current) return
+      if (e.target && e.target.closest && e.target.closest('.big-button')) return
+      endRunRef.current('stray')
+    }
+    document.addEventListener('pointerdown', onStray, true)
+    return () => document.removeEventListener('pointerdown', onStray, true)
+  }, [])
+
   // Losing focus ends the run — no pausing
   useEffect(() => {
     const onHide = () => {
@@ -285,7 +297,7 @@ export default function App() {
           ) : (
             <p>Press and hold for as long as you can. Let go and your time goes on the board.</p>
           )}
-          <p className="warn">Leaving this tab ends your run. No pausing. Them&apos;s the rules.</p>
+          <p className="warn">Touch anything but the button and you&apos;re done. Leaving this tab ends your run. No pausing. Them&apos;s the rules.</p>
           <p className="pb">
             {best > 0 && <>Your best: <strong>{fmtTime(best)}</strong></>}
             {best > 0 && streak > 1 && <> &nbsp;·&nbsp; </>}
@@ -317,7 +329,6 @@ export default function App() {
         <button
           className="decoy-button"
           style={{ left: `${gag.x}%`, top: `${gag.y}%` }}
-          onPointerDown={e => { e.stopPropagation(); e.preventDefault() }}
         >
           HOLD ME
         </button>
@@ -335,8 +346,7 @@ export default function App() {
       {duo && !holding && <p className="duo-hint">Hold both. Either lets go, you&apos;re done.</p>}
 
       {notifs.map(n => (
-        <div key={n.id} className="fake-notif" style={{ top: `${n.top}%` }}
-          onPointerDown={(e) => e.stopPropagation()}>
+        <div key={n.id} className="fake-notif" style={{ top: `${n.top}%` }}>
           <span className="fn-icon">{n.icon}</span>
           <span><strong>{n.title}</strong><br />{n.body}</span>
         </div>

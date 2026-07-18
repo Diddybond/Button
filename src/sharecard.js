@@ -35,10 +35,10 @@ export function makeShareCard({ ms, rank, title, reason }) {
   ctx.fillStyle = '#9b95a3'
   ctx.font = font(40, 600)
   if (rank) ctx.fillText(`Rank #${rank} in the world`, W / 2, 690)
-  ctx.fillText(
-    reason === 'focus' ? 'Cause of death: looked away' : 'Cause of death: let go',
-    W / 2, rank ? 750 : 690
-  )
+  const cause = reason === 'focus' ? 'looked away'
+    : reason === 'stray' ? 'wandering fingers'
+    : 'let go'
+  ctx.fillText(`Cause of death: ${cause}`, W / 2, rank ? 750 : 690)
 
   ctx.fillStyle = '#f5f2ec'
   ctx.font = font(38, 700)

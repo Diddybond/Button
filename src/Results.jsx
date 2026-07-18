@@ -106,7 +106,9 @@ export default function Results({ run, best, streak, onAgain, onBoard }) {
   return (
     <div className="results">
       <p className="verdict">
-        {run.reason === 'focus' ? 'You looked away. The button noticed.' : 'You let go.'}
+        {run.reason === 'focus' ? 'You looked away. The button noticed.'
+          : run.reason === 'stray' ? 'You touched something that wasn’t the button. Fatal.'
+          : 'You let go.'}
       </p>
       <div className="final-time">{fmtTime(run.ms)}</div>
       <p className="title-line">“{title}”{run.mode === 'duo' && ' · two-thumb mode'}</p>
