@@ -1,8 +1,23 @@
 import { fmtTime } from './format.js'
 
+const CARD_BG = 'https://d8j0ntlcm91z4.cloudfront.net/user_39p5yo8k7I2G83SENqXCUdgvNPZ/hf_20260718_145923_71f5c037-5109-4071-94d4-d71dfc9bec38.png'
+
+// Fetched lazily, only when someone actually makes a card. If CORS or the
+// network says no, the card falls back to the plain dark background.
+function loadCardBg() {
+  return new Promise(resolve => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    const timer = setTimeout(() => resolve(null), 4000)
+    img.onload = () => { clearTimeout(timer); resolve(img) }
+    img.onerror = () => { clearTimeout(timer); resolve(null) }
+    img.src = CARD_BG
+  })
+}
+
 // Renders a shareable score card as a PNG blob. The sponsor plate is baked
 // into the image so shared screenshots always carry the brand.
-export function makeShareCard({ ms, rank, title, reason }) {
+export async function makeShareCard({ ms, rank, title, reason }) {
   const W = 1080
   const H = 1350
   const c = document.createElement('canvas')
@@ -14,6 +29,19 @@ export function makeShareCard({ ms, rank, title, reason }) {
 
   ctx.fillStyle = '#111014'
   ctx.fillRect(0, 0, W, H)
+  const bg = await loadCardBg()
+  if (bg) {
+    try {
+      // cover-fit the artwork, then dim it so the text stays readable
+      const scale = Math.max(W / bg.width, H / bg.height)
+      const dw = bg.width * scale, dh = bg.height * scale
+      ctx.globalAlpha = 0.9
+      ctx.drawImage(bg, (W - dw) / 2, (H - dh) / 2, dw, dh)
+      ctx.globalAlpha = 1
+      ctx.fillStyle = 'rgba(17, 16, 20, 0.35)'
+      ctx.fillRect(0, 0, W, H)
+    } catch { /* tainted canvas or bad image — plain background it is */ }
+  }
   ctx.textAlign = 'center'
 
   ctx.fillStyle = '#ff5a36'
