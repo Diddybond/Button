@@ -504,6 +504,23 @@ export default function App() {
 
       {milestone && <div className="milestone" key={milestone}>{milestone}</div>}
 
+      {!holding && (
+        <nav className="bottom-row">
+          <button className="link-btn" onClick={() => setMode(duo ? 'solo' : 'duo')}>
+            {duo ? 'Back to one thumb' : 'Two-thumb mode'}
+          </button>
+          <button className="link-btn" onClick={() => setScreen('board')}>Leaderboard</button>
+          <button className="link-btn" onClick={() => {
+            const m = toggleMuted()
+            setMuted(m)
+            if (!m) sfx.win() // audible proof the speaker works
+          }}>
+            {muted ? '🔇 Sound off' : '🔊 Sound on'}
+          </button>
+        </nav>
+      )}
+      {duo && !holding && <p className="duo-hint">Hold both. Either lets go, you&apos;re done.</p>}
+
       <div className="button-zone">
         {buttons.map(id => (
           <button
@@ -530,24 +547,6 @@ export default function App() {
           HOLD ME
         </button>
       ))}
-
-      {!holding && (
-        <nav className="bottom-row">
-          <button className="link-btn" onClick={() => setMode(duo ? 'solo' : 'duo')}>
-            {duo ? 'Back to one thumb' : 'Two-thumb mode'}
-          </button>
-          <button className="link-btn" onClick={() => setScreen('board')}>Leaderboard</button>
-          <button className="link-btn" onClick={() => {
-            const m = toggleMuted()
-            setMuted(m)
-            if (!m) sfx.win() // audible proof the speaker works
-          }}>
-            {muted ? '🔇 Sound off' : '🔊 Sound on'}
-          </button>
-        </nav>
-      )}
-
-      {duo && !holding && <p className="duo-hint">Hold both. Either lets go, you&apos;re done.</p>}
 
       {notifs.map(n => (
         <div key={n.id} className="fake-notif" data-from={n.title} style={{ top: `${n.top}%` }}>

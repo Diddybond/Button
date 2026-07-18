@@ -409,7 +409,18 @@ body {
   text-underline-offset: 3px;
   padding: 8px;
 }
-.bottom-row { margin-bottom: 10px; }
+.bottom-row { margin-top: 4px; display: flex; flex-wrap: wrap; justify-content: center; }
+
+/* idle screen shows more chrome, so rein the button in a touch;
+   full size returns the moment a hold starts */
+.game:not(.live) .big-button {
+  width: min(72vw, 44dvh, 430px);
+  height: min(72vw, 44dvh, 430px);
+}
+.game.duo:not(.live) .big-button {
+  width: min(40vw, 38dvh, 280px);
+  height: min(40vw, 38dvh, 280px);
+}
 
 /* ---------- leaderboard ---------- */
 .board { align-items: stretch; max-width: 560px; margin: 0 auto; }
