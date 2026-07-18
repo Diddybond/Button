@@ -44,8 +44,10 @@ const MILESTONES = [
 
 const GAG_TYPES = ['ghost', 'disco', 'liar', 'decoy', 'gravity']
 
-// Cinematic backdrop art, fetched AFTER first paint so load stays instant
+// Cinematic backdrop art, fetched AFTER first paint so load stays instant.
+// The still fades in first; the looping video takes over once it can play.
 const CINE_BG = 'https://d8j0ntlcm91z4.cloudfront.net/user_39p5yo8k7I2G83SENqXCUdgvNPZ/hf_20260718_150720_40728716-2ebb-4fde-a50a-a574d2f182f3_min.webp'
+const CINE_VIDEO = 'https://d8j0ntlcm91z4.cloudfront.net/user_39p5yo8k7I2G83SENqXCUdgvNPZ/hf_20260718_154143_62e1f6b5-1b24-4d19-bc2b-ebb39a0e8ada.mp4'
 
 function parseChallenge() {
   try {
@@ -150,16 +152,21 @@ export default function App() {
   modeRef.current = mode
 
   const [cineBg, setCineBg] = useState(null)
+  const [cineVideo, setCineVideo] = useState(false)
+  const [videoReady, setVideoReady] = useState(false)
 
   // Lazy-load the cinematic backdrop once the page has settled; the CSS
-  // scene shows instantly and this fades in over it when ready
+  // scene shows instantly, the still fades in over it, then the looping
+  // video takes over. Reduced-motion users keep the still image only.
   useEffect(() => {
     const t = setTimeout(() => {
       const img = new Image()
       img.onload = () => setCineBg(CINE_BG)
       img.src = CINE_BG
     }, 700)
-    return () => clearTimeout(t)
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+    const tv = reduce ? null : setTimeout(() => setCineVideo(true), 1600)
+    return () => { clearTimeout(t); if (tv) clearTimeout(tv) }
   }, [])
 
   // King of the Hour, refreshed whenever the home screen shows
@@ -471,6 +478,19 @@ export default function App() {
     <div className={`game${duo ? ' duo' : ''}${holding ? ' live' : ''}`}>
       <div className="backdrop" aria-hidden="true">
         <div className="bd-cine" style={cineBg ? { backgroundImage: `url(${cineBg})`, opacity: 1 } : undefined} />
+        {cineVideo && (
+          <video
+            className="bd-video"
+            src={CINE_VIDEO}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            style={videoReady ? { opacity: 1 } : undefined}
+            onCanPlay={() => setVideoReady(true)}
+          />
+        )}
         <div className="bd-glow" />
         <div className="bd-orb o1" /><div className="bd-orb o2" /><div className="bd-orb o3" />
         <div className="bd-orb o4" /><div className="bd-orb o5" />

@@ -89,6 +89,17 @@ body {
   from { transform: scale(1); }
   to { transform: scale(1.09); }
 }
+.bd-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+  opacity: 0;
+  transition: opacity 2s ease;
+  animation: cine-drift 40s ease-in-out infinite alternate;
+}
 .bd-glow {
   position: absolute;
   inset: 0;
