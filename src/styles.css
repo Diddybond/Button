@@ -67,6 +67,64 @@ body {
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* ---------- animated 3D environment ---------- */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  perspective: 600px;
+  pointer-events: none;
+}
+.bd-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 42%, rgba(255, 90, 54, 0.12), transparent 60%);
+  animation: glow-breathe 7s ease-in-out infinite alternate;
+}
+@keyframes glow-breathe {
+  from { opacity: 0.7; }
+  to { opacity: 1.1; }
+}
+.bd-grid {
+  position: absolute;
+  left: -50%;
+  right: -50%;
+  bottom: -22%;
+  height: 55%;
+  background-image:
+    linear-gradient(rgba(255, 90, 54, 0.16) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, rgba(255, 90, 54, 0.16) 1.5px, transparent 1.5px);
+  background-size: 52px 52px;
+  transform: rotateX(62deg);
+  transform-origin: top;
+  animation: grid-move 3.2s linear infinite;
+  -webkit-mask-image: linear-gradient(transparent, black 45%);
+  mask-image: linear-gradient(transparent, black 45%);
+}
+.live .bd-grid { animation-duration: 1.6s; }
+@keyframes grid-move { to { background-position: 0 52px, 0 0; } }
+.bd-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(28px);
+  opacity: 0.3;
+  background: radial-gradient(circle, rgba(255, 90, 54, 0.55), transparent 70%);
+  animation: orb-float ease-in-out infinite alternate;
+}
+.bd-orb.o1 { width: 220px; height: 220px; top: 6%; left: -60px; animation-duration: 11s; }
+.bd-orb.o2 { width: 140px; height: 140px; top: 18%; right: -30px; animation-duration: 9s; background: radial-gradient(circle, rgba(120, 90, 255, 0.4), transparent 70%); }
+.bd-orb.o3 { width: 90px; height: 90px; top: 55%; left: 4%; animation-duration: 7s; }
+.bd-orb.o4 { width: 160px; height: 160px; bottom: 8%; right: 6%; animation-duration: 13s; background: radial-gradient(circle, rgba(255, 190, 60, 0.35), transparent 70%); }
+.bd-orb.o5 { width: 70px; height: 70px; top: 34%; left: 70%; animation-duration: 8s; }
+@keyframes orb-float {
+  from { transform: translateY(0) scale(1); }
+  to { transform: translateY(-46px) scale(1.18); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .backdrop * { animation: none !important; }
+}
+
 /* ---------- the button ---------- */
 .button-zone {
   flex: 1;
@@ -95,6 +153,15 @@ body {
 }
 .big-button.held {
   box-shadow: 0 4px 0 var(--accent-dark), 0 10px 30px rgba(255, 90, 54, 0.5);
+}
+
+/* the face lives on the button and blinks like it means it */
+.big-button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; }
+.face { width: 46%; height: auto; pointer-events: none; margin-bottom: -4px; }
+.face .blink { animation: face-blink 4.2s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes face-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.12); }
 }
 
 /* duo mode: two smaller buttons side by side */

@@ -56,6 +56,56 @@ function parseChallenge() {
   }
 }
 
+// The button's face. It has feelings, and they deteriorate.
+function Face({ mood }) {
+  const S = 'rgba(80, 16, 5, 0.85)'
+  return (
+    <svg className="face" viewBox="0 0 100 60" aria-hidden="true">
+      {mood === 'happy' && (<>
+        <circle className="blink" cx="32" cy="24" r="5" fill={S} />
+        <circle className="blink" cx="68" cy="24" r="5" fill={S} />
+        <path d="M30 38 Q50 52 70 38" stroke={S} strokeWidth="5" fill="none" strokeLinecap="round" />
+      </>)}
+      {mood === 'focused' && (<>
+        <ellipse className="blink" cx="32" cy="24" rx="6" ry="2.5" fill={S} />
+        <ellipse className="blink" cx="68" cy="24" rx="6" ry="2.5" fill={S} />
+        <path d="M34 42 L66 42" stroke={S} strokeWidth="5" fill="none" strokeLinecap="round" />
+      </>)}
+      {mood === 'worried' && (<>
+        <circle className="blink" cx="32" cy="24" r="6" fill={S} />
+        <circle className="blink" cx="68" cy="24" r="6" fill={S} />
+        <path d="M30 44 Q40 37 50 44 Q60 51 70 44" stroke={S} strokeWidth="4.5" fill="none" strokeLinecap="round" />
+      </>)}
+      {mood === 'mischief' && (<>
+        <path d="M24 16 L40 20" stroke={S} strokeWidth="4" strokeLinecap="round" />
+        <ellipse cx="32" cy="26" rx="5" ry="4" fill={S} />
+        <circle className="blink" cx="68" cy="24" r="5" fill={S} />
+        <path d="M30 42 Q55 52 70 36" stroke={S} strokeWidth="5" fill="none" strokeLinecap="round" />
+      </>)}
+      {mood === 'panic' && (<>
+        <circle cx="32" cy="22" r="8" fill="#fff" opacity="0.9" />
+        <circle cx="32" cy="22" r="3" fill={S} />
+        <circle cx="68" cy="22" r="8" fill="#fff" opacity="0.9" />
+        <circle cx="68" cy="22" r="3" fill={S} />
+        <ellipse cx="50" cy="44" rx="8" ry="10" fill={S} />
+      </>)}
+      {mood === 'angry' && (<>
+        <path d="M22 14 L40 22" stroke={S} strokeWidth="4.5" strokeLinecap="round" />
+        <path d="M78 14 L60 22" stroke={S} strokeWidth="4.5" strokeLinecap="round" />
+        <circle cx="32" cy="27" r="4.5" fill={S} />
+        <circle cx="68" cy="27" r="4.5" fill={S} />
+        <path d="M30 48 Q50 36 70 48" stroke={S} strokeWidth="5" fill="none" strokeLinecap="round" />
+      </>)}
+      {mood === 'unhinged' && (<>
+        <path d="M26 18 L38 30 M38 18 L26 30" stroke={S} strokeWidth="4" strokeLinecap="round" />
+        <circle cx="68" cy="24" r="8" fill="none" stroke={S} strokeWidth="3.5" />
+        <circle cx="68" cy="24" r="2.5" fill={S} />
+        <path d="M28 44 L38 40 L46 47 L56 39 L64 46 L72 41" stroke={S} strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </>)}
+    </svg>
+  )
+}
+
 function readStreak() {
   return {
     day: localStorage.getItem('htb_last_day') || '',
@@ -382,11 +432,29 @@ export default function App() {
   if (gag?.type === 'disco') gagStyle.filter = 'hue-rotate(140deg) saturate(1.5)'
   if (gag?.type === 'liar') label = 'RELEASE NOW'
 
+  // The face reflects how the run is going
+  let mood = 'happy'
+  if (holding) {
+    if (gag?.type === 'liar') mood = 'angry'
+    else if (gag?.type === 'gravity') mood = 'panic'
+    else if (gag?.type === 'decoy') mood = 'mischief'
+    else if (s > 420) mood = 'unhinged'
+    else if (s > 300) mood = 'mischief'
+    else if (s > 120) mood = 'worried'
+    else if (s > 30) mood = 'focused'
+  }
+
   const duo = mode === 'duo'
   const buttons = duo ? ['a', 'b'] : ['a']
 
   return (
-    <div className={`game${duo ? ' duo' : ''}`}>
+    <div className={`game${duo ? ' duo' : ''}${holding ? ' live' : ''}`}>
+      <div className="backdrop" aria-hidden="true">
+        <div className="bd-glow" />
+        <div className="bd-orb o1" /><div className="bd-orb o2" /><div className="bd-orb o3" />
+        <div className="bd-orb o4" /><div className="bd-orb o5" />
+        <div className="bd-grid" />
+      </div>
       {holding ? (
         <>
           <div className="timer" aria-live="off">{fmtTime(elapsed)}</div>
@@ -430,6 +498,7 @@ export default function App() {
             onPointerLeave={e => onBtnLeave(id, e)}
             onPointerCancel={e => onBtnUp(id, e)}
           >
+            <Face mood={mood} />
             {duo && !holding ? (id === 'a' ? 'LEFT' : 'RIGHT') : label}
           </button>
         ))}
