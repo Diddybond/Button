@@ -37,6 +37,7 @@ export function makeShareCard({ ms, rank, title, reason }) {
   if (rank) ctx.fillText(`Rank #${rank} in the world`, W / 2, 690)
   const cause = reason === 'focus' ? 'looked away'
     : reason === 'stray' ? 'wandering fingers'
+    : reason === 'slip' ? 'slid off'
     : 'let go'
   ctx.fillText(`Cause of death: ${cause}`, W / 2, rank ? 750 : 690)
 

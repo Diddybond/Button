@@ -78,6 +78,8 @@ export default function App() {
   const nextGagRef = useRef(0)
   const beatCrossedRef = useRef(false)
   const channelRef = useRef(null)
+  const pointerPosRef = useRef({}) // pointerId -> { x, y }
+  const lastSlipCheckRef = useRef(0)
   modeRef.current = mode
 
   // Live presence: how many thumbs are on buttons right now, worldwide
@@ -168,6 +170,23 @@ export default function App() {
       setTimeout(() => setNotifs(list => list.filter(x => x.id !== id)), 6000)
     }
 
+    // Slip check: every frame-ish, make sure each held finger is still
+    // physically on a button — catches sliding off, and the button
+    // drifting out from under a stationary finger
+    if (ms - lastSlipCheckRef.current > 80) {
+      lastSlipCheckRef.current = ms
+      for (const pid of Object.values(heldRef.current)) {
+        if (pid == null) continue
+        const pos = pointerPosRef.current[pid]
+        if (!pos) continue
+        const el = document.elementFromPoint(pos.x, pos.y)
+        if (!el || !el.closest('.big-button')) {
+          endRunRef.current('slip')
+          return
+        }
+      }
+    }
+
     // Phase-2 mischief after 5 minutes: the button starts playing games back
     if (ms >= 300_000 && ms >= nextGagRef.current) {
       nextGagRef.current = ms + 15_000 + Math.random() * 10_000
@@ -202,16 +221,46 @@ export default function App() {
 
   const onBtnDown = useCallback((id, e) => {
     if (e.button != null && e.button !== 0) return
-    heldRef.current[id] = true
+    if (heldRef.current[id] != null) return // already held by another finger
+    // Undo implicit pointer capture (touch pins the pointer to the button,
+    // which would let a finger wander off-screen without us noticing)
+    try { e.currentTarget.releasePointerCapture(e.pointerId) } catch { /* fine */ }
+    heldRef.current[id] = e.pointerId
+    pointerPosRef.current[e.pointerId] = { x: e.clientX, y: e.clientY }
     if (holdingRef.current) return
     const need = modeRef.current === 'duo' ? ['a', 'b'] : ['a']
-    if (need.every(k => heldRef.current[k])) startTimer()
+    if (need.every(k => heldRef.current[k] != null)) startTimer()
   }, [startTimer])
 
-  const onBtnUp = useCallback((id) => {
-    if (!heldRef.current[id]) return
-    heldRef.current[id] = false
+  // Only the pointer actually doing the holding can end the run — a mouse
+  // cursor drifting across the button must not count
+  const onBtnUp = useCallback((id, e) => {
+    if (heldRef.current[id] == null || heldRef.current[id] !== e.pointerId) return
+    delete heldRef.current[id]
     if (holdingRef.current) endRunRef.current('release')
+  }, [])
+
+  // The holding pointer left the button while still down: a slip, not a release
+  const onBtnLeave = useCallback((id, e) => {
+    if (heldRef.current[id] == null || heldRef.current[id] !== e.pointerId) return
+    delete heldRef.current[id]
+    if (holdingRef.current) endRunRef.current('slip')
+  }, [])
+
+  // Track where every active pointer is, for the slip check
+  useEffect(() => {
+    const onMove = (e) => {
+      pointerPosRef.current[e.pointerId] = { x: e.clientX, y: e.clientY }
+    }
+    const onGone = (e) => { delete pointerPosRef.current[e.pointerId] }
+    document.addEventListener('pointermove', onMove, true)
+    document.addEventListener('pointerup', onGone, true)
+    document.addEventListener('pointercancel', onGone, true)
+    return () => {
+      document.removeEventListener('pointermove', onMove, true)
+      document.removeEventListener('pointerup', onGone, true)
+      document.removeEventListener('pointercancel', onGone, true)
+    }
   }, [])
 
   // Touching anywhere that isn't a game button ends the run. Yes, that
@@ -316,9 +365,9 @@ export default function App() {
             className={`big-button${holding ? ' held' : ''}`}
             style={{ transform: `translate(${id === 'b' ? -driftX : driftX}px, ${driftY}px) scale(${scale})`, ...gagStyle }}
             onPointerDown={e => onBtnDown(id, e)}
-            onPointerUp={() => onBtnUp(id)}
-            onPointerLeave={() => onBtnUp(id)}
-            onPointerCancel={() => onBtnUp(id)}
+            onPointerUp={e => onBtnUp(id, e)}
+            onPointerLeave={e => onBtnLeave(id, e)}
+            onPointerCancel={e => onBtnUp(id, e)}
           >
             {duo && !holding ? (id === 'a' ? 'LEFT' : 'RIGHT') : label}
           </button>

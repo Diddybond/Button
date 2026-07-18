@@ -108,6 +108,7 @@ export default function Results({ run, best, streak, onAgain, onBoard }) {
       <p className="verdict">
         {run.reason === 'focus' ? 'You looked away. The button noticed.'
           : run.reason === 'stray' ? 'You touched something that wasn’t the button. Fatal.'
+          : run.reason === 'slip' ? 'Your finger wandered off the button. It noticed.'
           : 'You let go.'}
       </p>
       <div className="final-time">{fmtTime(run.ms)}</div>
