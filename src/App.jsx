@@ -4,16 +4,28 @@ import Leaderboard from './Leaderboard.jsx'
 import { fmtTime, vibrate } from './format.js'
 
 const MILESTONES = [
-  { at: 10_000, text: 'warming up', buzz: 20 },
-  { at: 30_000, text: 'the button is getting restless', buzz: 20 },
+  { at: 5_000, text: 'off you go then', buzz: 20 },
+  { at: 15_000, text: 'warming up', buzz: 20 },
+  { at: 30_000, text: 'you can stop whenever you like. just saying', buzz: 20 },
+  { at: 45_000, text: 'the button is getting restless', buzz: 20 },
   { at: 60_000, text: "now we're talking", buzz: [20, 40, 20] },
+  { at: 75_000, text: 'a minute and a quarter of your one wild life', buzz: 20 },
   { at: 90_000, text: 'your thumb is earning its keep', buzz: 20 },
+  { at: 105_000, text: 'just let go. nobody would blame you', buzz: 20 },
   { at: 120_000, text: 'ignore your phone. obviously', buzz: 20 },
-  { at: 180_000, text: 'three minutes. respectable', buzz: [20, 40, 20] },
+  { at: 150_000, text: 'you do realise this achieves nothing', buzz: 20 },
+  { at: 180_000, text: 'three minutes. respectable. ish', buzz: [20, 40, 20] },
+  { at: 210_000, text: 'imagine explaining this at work tomorrow', buzz: 20 },
+  { at: 240_000, text: 'your tea has gone cold, by the way', buzz: 20 },
+  { at: 270_000, text: 'quitting is free, you know', buzz: 20 },
   { at: 300_000, text: 'go on then', buzz: [20, 40, 20] },
-  { at: 420_000, text: 'the kettle has boiled by now', buzz: 20 },
+  { at: 360_000, text: 'six minutes of holding a pretend button', buzz: 20 },
+  { at: 420_000, text: 'the kettle boiled ages ago', buzz: 20 },
+  { at: 480_000, text: 'this is between you and the button now', buzz: 20 },
   { at: 600_000, text: 'have you nothing better to do', buzz: [20, 40, 20] },
+  { at: 720_000, text: "we've run out of nice things to say", buzz: 20 },
   { at: 900_000, text: 'genuinely impressed. slightly worried', buzz: 20 },
+  { at: 1_200_000, text: 'your ancestors crossed oceans for this', buzz: 20 },
   { at: 1_800_000, text: 'put it down and go outside', buzz: [40, 60, 40] },
 ]
 
@@ -157,12 +169,13 @@ export default function App() {
     return <Leaderboard onBack={() => setScreen(lastRun ? 'results' : 'game')} />
   }
 
-  // Escalating mischief, driven by elapsed time
+  // Escalating mischief, driven by elapsed time: slow drift from 10s,
+  // slow shrink from 20s, both creeping up the longer you hold
   const s = elapsed / 1000
-  const driftAmp = s > 30 ? Math.min((s - 30) * 1.2, 60) : 0
-  const driftX = driftAmp * Math.sin(s * 0.9)
-  const driftY = driftAmp * 0.7 * Math.sin(s * 0.63 + 2)
-  const scale = s > 60 ? Math.max(1 - (s - 60) * 0.0012, 0.82) : 1
+  const driftAmp = s > 10 ? Math.min((s - 10) * 0.9, 80) : 0
+  const driftX = driftAmp * Math.sin(s * 0.5)
+  const driftY = driftAmp * 0.7 * Math.sin(s * 0.34 + 2)
+  const scale = s > 20 ? Math.max(1 - (s - 20) * 0.0016, 0.7) : 1
 
   return (
     <div className="game">
