@@ -76,6 +76,19 @@ body {
   perspective: 600px;
   pointer-events: none;
 }
+.bd-cine {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center bottom;
+  opacity: 0;
+  transition: opacity 2s ease;
+  animation: cine-drift 40s ease-in-out infinite alternate;
+}
+@keyframes cine-drift {
+  from { transform: scale(1); }
+  to { transform: scale(1.09); }
+}
 .bd-glow {
   position: absolute;
   inset: 0;

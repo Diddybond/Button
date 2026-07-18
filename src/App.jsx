@@ -43,6 +43,9 @@ const MILESTONES = [
 
 const GAG_TYPES = ['ghost', 'disco', 'liar', 'decoy', 'gravity']
 
+// Cinematic backdrop art, fetched AFTER first paint so load stays instant
+const CINE_BG = 'https://d8j0ntlcm91z4.cloudfront.net/user_39p5yo8k7I2G83SENqXCUdgvNPZ/hf_20260718_150720_40728716-2ebb-4fde-a50a-a574d2f182f3_min.webp'
+
 function parseChallenge() {
   try {
     const p = new URLSearchParams(window.location.search)
@@ -144,6 +147,19 @@ export default function App() {
   const lastSlipCheckRef = useRef(0)
   const strayDetailRef = useRef(null)
   modeRef.current = mode
+
+  const [cineBg, setCineBg] = useState(null)
+
+  // Lazy-load the cinematic backdrop once the page has settled; the CSS
+  // scene shows instantly and this fades in over it when ready
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const img = new Image()
+      img.onload = () => setCineBg(CINE_BG)
+      img.src = CINE_BG
+    }, 700)
+    return () => clearTimeout(t)
+  }, [])
 
   // King of the Hour, refreshed whenever the home screen shows
   useEffect(() => {
@@ -450,6 +466,7 @@ export default function App() {
   return (
     <div className={`game${duo ? ' duo' : ''}${holding ? ' live' : ''}`}>
       <div className="backdrop" aria-hidden="true">
+        <div className="bd-cine" style={cineBg ? { backgroundImage: `url(${cineBg})`, opacity: 1 } : undefined} />
         <div className="bd-glow" />
         <div className="bd-orb o1" /><div className="bd-orb o2" /><div className="bd-orb o3" />
         <div className="bd-orb o4" /><div className="bd-orb o5" />
@@ -520,7 +537,11 @@ export default function App() {
             {duo ? 'Back to one thumb' : 'Two-thumb mode'}
           </button>
           <button className="link-btn" onClick={() => setScreen('board')}>Leaderboard</button>
-          <button className="link-btn" onClick={() => setMuted(toggleMuted())}>
+          <button className="link-btn" onClick={() => {
+            const m = toggleMuted()
+            setMuted(m)
+            if (!m) sfx.win() // audible proof the speaker works
+          }}>
             {muted ? '🔇 Sound off' : '🔊 Sound on'}
           </button>
         </nav>

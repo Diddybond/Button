@@ -15,6 +15,26 @@ function ac() {
   return ctx
 }
 
+// iOS and Chrome only allow audio after a user gesture. Warm the context up
+// on the very first touch anywhere so the first real sound isn't swallowed.
+if (typeof document !== 'undefined') {
+  const warm = () => {
+    const c = ac()
+    try {
+      // a one-sample silent buffer fully unlocks playback on iOS
+      const b = c.createBuffer(1, 1, 22050)
+      const s = c.createBufferSource()
+      s.buffer = b
+      s.connect(c.destination)
+      s.start(0)
+    } catch { /* fine */ }
+    document.removeEventListener('pointerdown', warm, true)
+    document.removeEventListener('touchstart', warm, true)
+  }
+  document.addEventListener('pointerdown', warm, true)
+  document.addEventListener('touchstart', warm, true)
+}
+
 export function isMuted() {
   return muted
 }
