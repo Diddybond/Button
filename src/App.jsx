@@ -5,6 +5,7 @@ import { fmtTime, vibrate } from './format.js'
 import { drawNotification } from './notifications.js'
 import { supabase, fetchKing } from './supabase.js'
 import { sfx, isMuted, toggleMuted } from './sound.js'
+import { startMusic, stopMusic, setMusicIntensity } from './ambient.js'
 
 const MILESTONES = [
   { at: 5_000, text: 'off you go then', buzz: 20 },
@@ -195,6 +196,7 @@ export default function App() {
     setMilestone(null)
     setGag(null)
     try { channelRef.current?.untrack() } catch { /* ignore */ }
+    stopMusic()
 
     if (ms < 50 && reason === 'release') {
       // Accidental tap: no run, no fuss
@@ -269,6 +271,7 @@ export default function App() {
     // drifting out from under a stationary finger
     if (ms - lastSlipCheckRef.current > 80) {
       lastSlipCheckRef.current = ms
+      setMusicIntensity(Math.min(1, ms / 600_000))
       for (const pid of Object.values(heldRef.current)) {
         if (pid == null) continue
         const pos = pointerPosRef.current[pid]
@@ -315,6 +318,7 @@ export default function App() {
     setHolding(true)
     vibrate(15)
     sfx.press()
+    startMusic()
     try { channelRef.current?.track({ holding: true }) } catch { /* ignore */ }
     rafRef.current = requestAnimationFrame(tick)
   }, [tick])
@@ -513,7 +517,8 @@ export default function App() {
           <button className="link-btn" onClick={() => {
             const m = toggleMuted()
             setMuted(m)
-            if (!m) sfx.win() // audible proof the speaker works
+            if (m) stopMusic()
+            else sfx.win() // audible proof the speaker works
           }}>
             {muted ? '🔇 Sound off' : '🔊 Sound on'}
           </button>

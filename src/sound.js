@@ -39,6 +39,11 @@ export function isMuted() {
   return muted
 }
 
+// Shared context for the ambient music engine
+export function audioCtx() {
+  return ac()
+}
+
 export function toggleMuted() {
   muted = !muted
   localStorage.setItem('htb_muted', muted ? '1' : '0')
