@@ -124,6 +124,22 @@ body {
 }
 
 .holders-line { color: var(--dim); font-size: 0.85rem; margin-top: 8px; }
+.king-line { color: var(--ink); font-size: 0.95rem; margin-top: 8px; }
+.king-line strong { color: var(--accent); }
+
+.death-list { list-style: none; }
+.death-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #232028;
+}
+.d-head { font-size: 1rem; }
+.d-head strong { color: var(--ink); }
+.d-ago { color: var(--dim); font-size: 0.78rem; float: right; margin-left: auto; }
+.d-head { display: flex; align-items: baseline; gap: 6px; }
+.d-detail { color: var(--dim); font-size: 0.88rem; }
 .challenge-line { color: var(--ink); }
 .challenge-line strong { color: var(--accent); }
 .challenge-result { color: var(--ink); margin-top: 10px; font-size: 1.05rem; }

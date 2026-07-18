@@ -42,7 +42,7 @@ export default function Results({ run, best, streak, onAgain, onBoard }) {
     setPosting(true)
     setError(null)
     try {
-      const res = await submitScore(n, run.ms, guessCountry(), li || null, run.mode)
+      const res = await submitScore(n, run.ms, guessCountry(), li || null, run.mode, run.reason, run.detail)
       localStorage.setItem('htb_name', n)
       if (li) localStorage.setItem('htb_linkedin', li)
       setPosted(res)

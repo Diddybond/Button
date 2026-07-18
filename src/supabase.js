@@ -27,14 +27,33 @@ export async function fetchRank(ms, mode = 'solo') {
   return data
 }
 
-export async function submitScore(name, ms, country, linkedin, mode = 'solo') {
+export async function submitScore(name, ms, country, linkedin, mode = 'solo', cause, detail) {
   const { data, error } = await supabase.rpc('submit_button_score', {
     p_name: name,
     p_ms: ms,
     p_country: country || null,
     p_linkedin: linkedin || null,
     p_mode: mode,
+    p_cause: cause || null,
+    p_detail: detail || null,
   })
   if (error) throw error
   return data // { id, rank }
+}
+
+// Hall of Deaths: most recent posted runs with how they ended
+export async function fetchDeaths() {
+  const { data, error } = await supabase
+    .from('button_scores')
+    .select('name, ms, country, cause, cause_detail, created_at')
+    .order('created_at', { ascending: false })
+    .limit(50)
+  if (error) throw error
+  return data
+}
+
+export async function fetchKing() {
+  const { data, error } = await supabase.rpc('get_king_of_hour')
+  if (error) throw error
+  return data // { prev: {name,ms}|null, current: {name,ms}|null }
 }

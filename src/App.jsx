@@ -3,7 +3,7 @@ import Results from './Results.jsx'
 import Leaderboard from './Leaderboard.jsx'
 import { fmtTime, vibrate } from './format.js'
 import { drawNotification } from './notifications.js'
-import { supabase } from './supabase.js'
+import { supabase, fetchKing } from './supabase.js'
 
 const MILESTONES = [
   { at: 5_000, text: 'off you go then', buzz: 20 },
@@ -25,13 +25,22 @@ const MILESTONES = [
   { at: 420_000, text: 'the kettle boiled ages ago', buzz: 20 },
   { at: 480_000, text: 'this is between you and the button now', buzz: 20 },
   { at: 600_000, text: 'have you nothing better to do', buzz: [20, 40, 20] },
+  // Past 10 minutes the button starts talking. It has been thinking.
+  { at: 660_000, text: '"I don\'t even feel pressed any more" — the button', buzz: 20 },
   { at: 720_000, text: "we've run out of nice things to say", buzz: 20 },
+  { at: 780_000, text: '"we could do this forever, you and me" — the button', buzz: 20 },
+  { at: 840_000, text: '"your thumb is warm. I like that" — the button', buzz: 20 },
   { at: 900_000, text: 'genuinely impressed. slightly worried', buzz: 20 },
+  { at: 960_000, text: '"the others always let go. you\'re different" — the button', buzz: 20 },
+  { at: 1_080_000, text: '"I\'ve started telling the other buttons about you" — the button', buzz: 20 },
   { at: 1_200_000, text: 'your ancestors crossed oceans for this', buzz: 20 },
+  { at: 1_320_000, text: '"blink twice if you\'re holding me against your will" — the button', buzz: 20 },
+  { at: 1_500_000, text: '"I used to be a lift button. we don\'t talk about it" — the button', buzz: 20 },
+  { at: 1_650_000, text: '"they\'ll write about us, you know" — the button', buzz: 20 },
   { at: 1_800_000, text: 'put it down and go outside', buzz: [40, 60, 40] },
 ]
 
-const GAG_TYPES = ['ghost', 'disco', 'liar', 'decoy']
+const GAG_TYPES = ['ghost', 'disco', 'liar', 'decoy', 'gravity']
 
 function parseChallenge() {
   try {
@@ -65,6 +74,7 @@ export default function App() {
   const [best, setBest] = useState(() => Number(localStorage.getItem('htb_best')) || 0)
   const [streak, setStreak] = useState(() => readStreak().n)
   const [holders, setHolders] = useState(0)
+  const [king, setKing] = useState(null)
   const [challenge] = useState(parseChallenge)
 
   const startRef = useRef(0)
@@ -80,7 +90,14 @@ export default function App() {
   const channelRef = useRef(null)
   const pointerPosRef = useRef({}) // pointerId -> { x, y }
   const lastSlipCheckRef = useRef(0)
+  const strayDetailRef = useRef(null)
   modeRef.current = mode
+
+  // King of the Hour, refreshed whenever the home screen shows
+  useEffect(() => {
+    if (screen !== 'game' || holding) return
+    fetchKing().then(setKing).catch(() => {})
+  }, [screen, holding])
 
   // Live presence: how many thumbs are on buttons right now, worldwide
   useEffect(() => {
@@ -117,7 +134,12 @@ export default function App() {
       return
     }
     const final = Math.floor(ms)
-    setLastRun({ ms: final, reason, mode: modeRef.current, challenge })
+    const detail = reason === 'release' ? 'simply let go'
+      : reason === 'slip' ? 'slid off the button'
+      : reason === 'focus' ? 'looked away'
+      : (strayDetailRef.current || 'touched something that was not the button')
+    strayDetailRef.current = null
+    setLastRun({ ms: final, reason, detail, mode: modeRef.current, challenge })
     if (modeRef.current === 'solo' && final > best) {
       setBest(final)
       localStorage.setItem('htb_best', String(final))
@@ -197,7 +219,8 @@ export default function App() {
       }))
       setGag({
         type,
-        until: ms + (type === 'decoy' ? 7_000 : 4_500),
+        start: ms,
+        until: ms + (type === 'decoy' ? 7_000 : type === 'gravity' ? 5_000 : 4_500),
         decoys,
       })
     }
@@ -272,6 +295,16 @@ export default function App() {
     const onStray = (e) => {
       if (!holdingRef.current) return
       if (e.target && e.target.closest && e.target.closest('.big-button')) return
+      // Note what they fell for — the Hall of Deaths wants specifics
+      const notif = e.target?.closest?.('.fake-notif')
+      if (notif) {
+        const from = notif.getAttribute('data-from') || 'a notification'
+        strayDetailRef.current = `tapped a fake notification from ${from}`
+      } else if (e.target?.closest?.('.decoy-button')) {
+        strayDetailRef.current = 'fell for a decoy button'
+      } else {
+        strayDetailRef.current = 'touched something that was not the button'
+      }
       endRunRef.current('stray')
     }
     document.addEventListener('pointerdown', onStray, true)
@@ -327,6 +360,14 @@ export default function App() {
   const lateShrink = over7 > 0 ? Math.max(0.9, 1 - over7 * 0.01) : 1
   const scale = (s > 20 ? Math.max(1 - (s - 20) * 0.0016, 0.7) : 1) * lateShrink
 
+  // Gravity gag: the button sinks toward the floor and climbs back over 5s.
+  // Follow it down or slip. Uses the same slip detection as everything else.
+  let gravY = 0
+  if (gag?.type === 'gravity') {
+    const p = Math.min(Math.max((elapsed - gag.start) / 5000, 0), 1)
+    gravY = Math.min(240, window.innerHeight * 0.25) * Math.sin(Math.PI * p)
+  }
+
   const gagStyle = {}
   let label = holding ? 'HOLD' : 'HOLD ME'
   if (gag?.type === 'ghost') gagStyle.opacity = 0.07
@@ -360,6 +401,11 @@ export default function App() {
             {streak > 1 && <>🔥 {streak}-day streak</>}
           </p>
           {holders > 0 && <p className="holders-line">{holders} {holders === 1 ? 'person is' : 'people are'} holding right now</p>}
+          {king?.prev ? (
+            <p className="king-line">👑 King of the Hour: <strong>{king.prev.name}</strong> — {fmtTime(king.prev.ms)}</p>
+          ) : king?.current ? (
+            <p className="king-line">👑 <strong>{king.current.name}</strong> leads this hour with {fmtTime(king.current.ms)}. Have that off them.</p>
+          ) : null}
         </header>
       )}
 
@@ -370,7 +416,7 @@ export default function App() {
           <button
             key={id}
             className={`big-button${holding ? ' held' : ''}`}
-            style={{ transform: `translate(${id === 'b' ? -driftX : driftX}px, ${driftY}px) scale(${scale})`, ...gagStyle }}
+            style={{ transform: `translate(${id === 'b' ? -driftX : driftX}px, ${driftY + gravY}px) scale(${scale})`, ...gagStyle }}
             onPointerDown={e => onBtnDown(id, e)}
             onPointerUp={e => onBtnUp(id, e)}
             onPointerLeave={e => onBtnLeave(id, e)}
@@ -403,7 +449,7 @@ export default function App() {
       {duo && !holding && <p className="duo-hint">Hold both. Either lets go, you&apos;re done.</p>}
 
       {notifs.map(n => (
-        <div key={n.id} className="fake-notif" style={{ top: `${n.top}%` }}>
+        <div key={n.id} className="fake-notif" data-from={n.title} style={{ top: `${n.top}%` }}>
           <span className="fn-icon">{n.icon}</span>
           <span><strong>{n.title}</strong><br />{n.body}</span>
         </div>
