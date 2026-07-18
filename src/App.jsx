@@ -49,6 +49,34 @@ const GAG_TYPES = ['ghost', 'disco', 'liar', 'decoy', 'gravity']
 const CINE_BG = 'https://d8j0ntlcm91z4.cloudfront.net/user_39p5yo8k7I2G83SENqXCUdgvNPZ/hf_20260718_150720_40728716-2ebb-4fde-a50a-a574d2f182f3_min.webp'
 const CINE_VIDEO = 'https://d8j0ntlcm91z4.cloudfront.net/user_39p5yo8k7I2G83SENqXCUdgvNPZ/hf_20260718_154143_62e1f6b5-1b24-4d19-bc2b-ebb39a0e8ada.mp4'
 
+// Decoy buttons are traps you must NOT touch — so they have to be dodgeable.
+// We keep every decoy clear of the real button's circle (plus a finger-sized
+// margin) so one can never spawn on top of you, and clear of the sponsor
+// strip. Returns viewport-percentage positions for the top-left of each decoy.
+function placeDecoys(count) {
+  const W = window.innerWidth
+  const H = window.innerHeight
+  const size = Math.min(0.34 * W, 200) // matches .decoy-button
+  // The real button: full-size hold circle, centred, sitting a bit low
+  const btnR = Math.min(0.78 * W, 0.62 * H, 460) / 2
+  const btnCx = W / 2
+  const btnCy = H * 0.56
+  const safe = btnR + size / 2 + 48 // keep this gap between centres
+  const bottomLimit = H - 96 // stay above the sponsor strip
+  const out = []
+  let guard = 0
+  while (out.length < count && guard++ < 200) {
+    const left = 0.02 * W + Math.random() * (W - size - 0.04 * W)
+    const top = 0.05 * H + Math.random() * (bottomLimit - size - 0.05 * H)
+    const cx = left + size / 2
+    const cy = top + size / 2
+    if (Math.hypot(cx - btnCx, cy - btnCy) < safe) continue // over the button
+    if (out.some(d => Math.hypot(cx - (d.px + size / 2), cy - (d.py + size / 2)) < size * 0.9)) continue // overlapping another decoy
+    out.push({ x: (left / W) * 100, y: (top / H) * 100, px: left, py: top })
+  }
+  return out.map(({ x, y }) => ({ x, y }))
+}
+
 function parseChallenge() {
   try {
     const p = new URLSearchParams(window.location.search)
@@ -274,17 +302,24 @@ export default function App() {
     }
 
     // Slip check: every frame-ish, make sure each held finger is still
-    // physically on a button — catches sliding off, and the button
-    // drifting out from under a stationary finger
+    // physically on its button — catches sliding off, and the button
+    // drifting out from under a stationary finger. Measured geometrically
+    // against the button's own circle so decoys/notifications layered on
+    // top can never fool it into a false "slip".
     if (ms - lastSlipCheckRef.current > 80) {
       lastSlipCheckRef.current = ms
       setMusicIntensity(Math.min(1, ms / 600_000))
-      for (const pid of Object.values(heldRef.current)) {
+      for (const [id, pid] of Object.entries(heldRef.current)) {
         if (pid == null) continue
         const pos = pointerPosRef.current[pid]
         if (!pos) continue
-        const el = document.elementFromPoint(pos.x, pos.y)
-        if (!el || !el.closest('.big-button')) {
+        const el = document.querySelector(`.big-button[data-btn="${id}"]`)
+        if (!el) continue
+        const r = el.getBoundingClientRect()
+        const cx = r.left + r.width / 2
+        const cy = r.top + r.height / 2
+        const radius = r.width / 2
+        if (Math.hypot(pos.x - cx, pos.y - cy) > radius + 6) {
           endRunRef.current('slip')
           return
         }
@@ -295,10 +330,7 @@ export default function App() {
     if (ms >= 300_000 && ms >= nextGagRef.current) {
       nextGagRef.current = ms + 15_000 + Math.random() * 10_000
       const type = GAG_TYPES[Math.floor(Math.random() * GAG_TYPES.length)]
-      const decoys = Array.from({ length: 2 + Math.floor(Math.random() * 3) }, () => ({
-        x: 5 + Math.random() * 60,
-        y: 8 + Math.random() * 55,
-      }))
+      const decoys = type === 'decoy' ? placeDecoys(2 + Math.floor(Math.random() * 3)) : []
       setGag({
         type,
         start: ms,
@@ -551,6 +583,7 @@ export default function App() {
           <button
             key={id}
             className={`big-button${holding ? ' held' : ''}`}
+            data-btn={id}
             style={{ transform: `translate(${id === 'b' ? -driftX : driftX}px, ${driftY + gravY}px) scale(${scale})`, ...gagStyle }}
             onPointerDown={e => onBtnDown(id, e)}
             onPointerUp={e => onBtnUp(id, e)}
