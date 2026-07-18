@@ -4,6 +4,7 @@ import Leaderboard from './Leaderboard.jsx'
 import { fmtTime, vibrate } from './format.js'
 import { drawNotification } from './notifications.js'
 import { supabase, fetchKing } from './supabase.js'
+import { sfx, isMuted, toggleMuted } from './sound.js'
 
 const MILESTONES = [
   { at: 5_000, text: 'off you go then', buzz: 20 },
@@ -75,6 +76,7 @@ export default function App() {
   const [streak, setStreak] = useState(() => readStreak().n)
   const [holders, setHolders] = useState(0)
   const [king, setKing] = useState(null)
+  const [muted, setMuted] = useState(isMuted)
   const [challenge] = useState(parseChallenge)
 
   const startRef = useRef(0)
@@ -139,6 +141,7 @@ export default function App() {
       : reason === 'focus' ? 'looked away'
       : (strayDetailRef.current || 'touched something that was not the button')
     strayDetailRef.current = null
+    sfx.death()
     setLastRun({ ms: final, reason, detail, mode: modeRef.current, challenge })
     if (modeRef.current === 'solo' && final > best) {
       setBest(final)
@@ -174,6 +177,7 @@ export default function App() {
       milestoneIdxRef.current += 1
       setMilestone(next.text)
       vibrate(next.buzz)
+      sfx.milestone()
     }
 
     // Challenge moment: the instant you pass your mate's time
@@ -181,6 +185,7 @@ export default function App() {
       beatCrossedRef.current = true
       setMilestone(`that's ${challenge.from} beaten. don't stop now`)
       vibrate([40, 60, 40])
+      sfx.win()
     }
 
     // Fake notifications after 2 minutes
@@ -190,6 +195,7 @@ export default function App() {
       const id = ++notifIdRef.current
       setNotifs(list => [...list.slice(-2), { ...n, id, top: 8 + Math.random() * 30 }])
       setTimeout(() => setNotifs(list => list.filter(x => x.id !== id)), 6000)
+      sfx.notif()
     }
 
     // Slip check: every frame-ish, make sure each held finger is still
@@ -223,6 +229,7 @@ export default function App() {
         until: ms + (type === 'decoy' ? 7_000 : type === 'gravity' ? 5_000 : 4_500),
         decoys,
       })
+      sfx.gag()
     }
     setGag(g => (g && ms > g.until ? null : g))
 
@@ -241,6 +248,7 @@ export default function App() {
     setGag(null)
     setHolding(true)
     vibrate(15)
+    sfx.press()
     try { channelRef.current?.track({ holding: true }) } catch { /* ignore */ }
     rafRef.current = requestAnimationFrame(tick)
   }, [tick])
@@ -443,6 +451,9 @@ export default function App() {
             {duo ? 'Back to one thumb' : 'Two-thumb mode'}
           </button>
           <button className="link-btn" onClick={() => setScreen('board')}>Leaderboard</button>
+          <button className="link-btn" onClick={() => setMuted(toggleMuted())}>
+            {muted ? '🔇 Sound off' : '🔊 Sound on'}
+          </button>
         </nav>
       )}
 

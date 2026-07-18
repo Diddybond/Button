@@ -3,6 +3,7 @@ import { fmtTime, guessCountry, vibrate } from './format.js'
 import { fetchRank, submitScore } from './supabase.js'
 import { timeToTitle } from './titles.js'
 import { makeShareCard } from './sharecard.js'
+import { sfx } from './sound.js'
 
 const GAME_URL = typeof window !== 'undefined' ? window.location.origin : ''
 
@@ -47,6 +48,7 @@ export default function Results({ run, best, streak, onAgain, onBoard }) {
       if (li) localStorage.setItem('htb_linkedin', li)
       setPosted(res)
       vibrate(30)
+      sfx.win()
     } catch (e) {
       const msg = String(e?.message || '')
       if (msg.includes('NAME_PROFANITY')) setError("That name's not going on the board. Try another.")
