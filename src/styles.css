@@ -35,7 +35,7 @@ body {
 }
 
 /* ---------- intro / timer ---------- */
-.intro { text-align: center; margin-top: 4vh; }
+.intro { text-align: center; margin-top: 2vh; }
 .intro h1 {
   font-size: clamp(2.6rem, 12vw, 4.5rem);
   font-weight: 900;
@@ -43,7 +43,7 @@ body {
   letter-spacing: -0.03em;
   text-transform: uppercase;
 }
-.intro p { color: var(--dim); margin-top: 14px; max-width: 30ch; margin-inline: auto; font-size: 1rem; }
+.intro p { color: var(--dim); margin-top: 12px; max-width: 34ch; margin-inline: auto; font-size: 1rem; }
 .intro .warn { color: var(--accent); font-weight: 600; font-size: 0.9rem; }
 .intro .pb { color: var(--ink); }
 
