@@ -444,6 +444,7 @@ body {
 .board-head h2 { font-size: 1.9rem; font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; }
 .loading { color: var(--dim); text-align: center; margin-top: 30px; }
 
+.board-hint { color: var(--dim); font-size: 0.8rem; margin-bottom: 4px; text-align: center; }
 .board-list { list-style: none; }
 .board-list li {
   display: flex;
@@ -453,6 +454,10 @@ body {
   border-bottom: 1px solid #232028;
   font-size: 1rem;
 }
+.board-list li.tappable { cursor: pointer; border-radius: 8px; transition: background 0.12s; }
+.board-list li.tappable:hover,
+.board-list li.tappable:focus-visible { background: #1c1a21; outline: none; }
+.board-list li.tappable:active { background: #232028; }
 .board-list li.podium { font-size: 1.15rem; font-weight: 800; }
 .board-list .rank { color: var(--accent); font-weight: 800; min-width: 3.2ch; font-variant-numeric: tabular-nums; }
 .board-list .bname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { fmtTime, countryFlag, guessCountry } from './format.js'
 import { fetchBoard, fetchDeaths } from './supabase.js'
+import { timeToTitle } from './titles.js'
+import { makeShareCard } from './sharecard.js'
+
+const GAME_URL = typeof window !== 'undefined' ? window.location.origin : ''
 
 const PERIODS = [
   { key: 'day', label: 'Today', hours: 24 },
@@ -31,7 +35,37 @@ export default function Leaderboard({ onBack }) {
   const [scope, setScope] = useState('world') // world | local
   const [rows, setRows] = useState(null)
   const [error, setError] = useState(false)
+  const [cardIdx, setCardIdx] = useState(null) // which row is currently making a card
   const deaths = period === 'deaths'
+
+  // Tap any board entry to grab its shareable score card
+  async function makeCard(row, rank, idx) {
+    if (cardIdx != null) return
+    setCardIdx(idx)
+    try {
+      const blob = await makeShareCard({
+        ms: row.ms,
+        rank,
+        title: timeToTitle(row.ms),
+        reason: row.cause,
+      })
+      const file = new File([blob], `hold-the-button-${fmtTime(row.ms).replace(/[:.]/g, '-')}.png`, { type: 'image/png' })
+      const beatUrl = `${GAME_URL}/?beat=${row.ms}&from=${encodeURIComponent(row.name)}`
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text: `${row.name} held the button for ${fmtTime(row.ms)}. Beat it? ${beatUrl}` })
+      } else {
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(blob)
+        a.download = file.name
+        a.click()
+        setTimeout(() => URL.revokeObjectURL(a.href), 10_000)
+      }
+    } catch {
+      /* cancelled or unsupported — no drama */
+    } finally {
+      setCardIdx(null)
+    }
+  }
 
   useEffect(() => {
     setRows(null)
@@ -98,25 +132,34 @@ export default function Leaderboard({ onBack }) {
       )}
 
       {rows && rows.length > 0 && !deaths && (
-        <ol className="board-list">
-          {rows.map((r, i) => (
-            <li key={i} className={i < 3 ? 'podium' : ''}>
-              <span className="rank">#{i + 1}</span>
-              <span className="bname">
-                {r.name} {countryFlag(r.country)}
-                {r.linkedin && (
-                  <a className="li-badge" href={r.linkedin} target="_blank" rel="noopener nofollow"
-                    title={`${r.name} on LinkedIn`}>in</a>
-                )}
-                {r.facebook && (
-                  <a className="fb-badge" href={r.facebook} target="_blank" rel="noopener nofollow"
-                    title={`${r.name} on Facebook`}>f</a>
-                )}
-              </span>
-              <span className="btime">{fmtTime(r.ms)}</span>
-            </li>
-          ))}
-        </ol>
+        <>
+          <p className="board-hint">Tap any entry to grab its score card 📸</p>
+          <ol className="board-list">
+            {rows.map((r, i) => (
+              <li key={i} className={`tappable${i < 3 ? ' podium' : ''}`}
+                role="button" tabIndex={0}
+                onClick={() => makeCard(r, i + 1, i)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); makeCard(r, i + 1, i) } }}
+                title={`Make ${r.name}'s score card`}>
+                <span className="rank">#{i + 1}</span>
+                <span className="bname">
+                  {r.name} {countryFlag(r.country)}
+                  {r.linkedin && (
+                    <a className="li-badge" href={r.linkedin} target="_blank" rel="noopener nofollow"
+                      onClick={e => e.stopPropagation()}
+                      title={`${r.name} on LinkedIn`}>in</a>
+                  )}
+                  {r.facebook && (
+                    <a className="fb-badge" href={r.facebook} target="_blank" rel="noopener nofollow"
+                      onClick={e => e.stopPropagation()}
+                      title={`${r.name} on Facebook`}>f</a>
+                  )}
+                </span>
+                <span className="btime">{cardIdx === i ? 'making…' : fmtTime(r.ms)}</span>
+              </li>
+            ))}
+          </ol>
+        </>
       )}
       <footer className="sponsor-strip">
         <a href="https://rifkinandlivesey.co.uk" target="_blank" rel="noopener">

@@ -12,7 +12,7 @@ export const supabase = createClient(url, key, {
 export async function fetchBoard({ mode = 'solo', hours, country } = {}) {
   let q = supabase
     .from('button_scores')
-    .select('name, ms, country, linkedin, facebook, created_at')
+    .select('name, ms, country, linkedin, facebook, cause, created_at')
     .eq('mode', mode)
   if (hours) q = q.gte('created_at', new Date(Date.now() - hours * 3600_000).toISOString())
   if (country) q = q.eq('country', country)
