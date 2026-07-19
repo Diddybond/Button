@@ -13,6 +13,7 @@ export default function Results({ run, best, streak, onAgain, onBoard }) {
   const [rank, setRank] = useState(null)
   const [name, setName] = useState(() => localStorage.getItem('htb_name') || '')
   const [linkedin, setLinkedin] = useState(() => localStorage.getItem('htb_linkedin') || '')
+  const [facebook, setFacebook] = useState(() => localStorage.getItem('htb_facebook') || '')
   const [posted, setPosted] = useState(null) // { rank }
   const [posting, setPosting] = useState(false)
   const [error, setError] = useState(null)
@@ -40,12 +41,19 @@ export default function Results({ run, best, streak, onAgain, onBoard }) {
       setError('LinkedIn link should look like linkedin.com/in/yourname — or leave it blank.')
       return
     }
+    let fb = facebook.trim()
+    if (fb && /^((www|m)\.)?(facebook|fb)\.com\//.test(fb)) fb = 'https://' + fb
+    if (fb && !/^https:\/\/((www|m)\.)?(facebook|fb)\.com\/([A-Za-z0-9.\-]{3,100}\/?|profile\.php\?id=[0-9]{3,30})$/.test(fb)) {
+      setError('Facebook link should look like facebook.com/yourname — or leave it blank.')
+      return
+    }
     setPosting(true)
     setError(null)
     try {
-      const res = await submitScore(n, run.ms, guessCountry(), li || null, run.mode, run.reason, run.detail)
+      const res = await submitScore(n, run.ms, guessCountry(), li || null, fb || null, run.mode, run.reason, run.detail)
       localStorage.setItem('htb_name', n)
       if (li) localStorage.setItem('htb_linkedin', li)
+      if (fb) localStorage.setItem('htb_facebook', fb)
       setPosted(res)
       vibrate(30)
       sfx.win()
@@ -55,6 +63,7 @@ export default function Results({ run, best, streak, onAgain, onBoard }) {
       else if (msg.includes('RATE_LIMITED')) setError('Steady on. Too many posts — try again in a few minutes.')
       else if (msg.includes('NAME_CHARS')) setError('Letters, numbers, spaces and - _ . only.')
       else if (msg.includes('LINKEDIN_INVALID')) setError('That LinkedIn link doesn’t look right — linkedin.com/in/yourname or blank.')
+      else if (msg.includes('FACEBOOK_INVALID')) setError('That Facebook link doesn’t look right — facebook.com/yourname or blank.')
       else if (msg.includes('TIME_TOO_SHORT')) setError('Runs under a second don’t make the board.')
       else setError('Couldn’t post that. Give it another go.')
     } finally {
@@ -156,6 +165,15 @@ export default function Results({ run, best, streak, onAgain, onBoard }) {
             value={linkedin}
             onChange={e => setLinkedin(e.target.value.slice(0, 120))}
             placeholder="LinkedIn profile link (optional, shown on the board)"
+            autoComplete="off"
+            inputMode="url"
+            onKeyDown={e => { if (e.key === 'Enter') post() }}
+          />
+          <input
+            className="linkedin-input"
+            value={facebook}
+            onChange={e => setFacebook(e.target.value.slice(0, 160))}
+            placeholder="Facebook profile link (optional, shown on the board)"
             autoComplete="off"
             inputMode="url"
             onKeyDown={e => { if (e.key === 'Enter') post() }}

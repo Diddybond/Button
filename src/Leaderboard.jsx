@@ -108,6 +108,10 @@ export default function Leaderboard({ onBack }) {
                   <a className="li-badge" href={r.linkedin} target="_blank" rel="noopener nofollow"
                     title={`${r.name} on LinkedIn`}>in</a>
                 )}
+                {r.facebook && (
+                  <a className="fb-badge" href={r.facebook} target="_blank" rel="noopener nofollow"
+                    title={`${r.name} on Facebook`}>f</a>
+                )}
               </span>
               <span className="btime">{fmtTime(r.ms)}</span>
             </li>

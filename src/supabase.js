@@ -12,7 +12,7 @@ export const supabase = createClient(url, key, {
 export async function fetchBoard({ mode = 'solo', hours, country } = {}) {
   let q = supabase
     .from('button_scores')
-    .select('name, ms, country, linkedin, created_at')
+    .select('name, ms, country, linkedin, facebook, created_at')
     .eq('mode', mode)
   if (hours) q = q.gte('created_at', new Date(Date.now() - hours * 3600_000).toISOString())
   if (country) q = q.eq('country', country)
@@ -27,12 +27,13 @@ export async function fetchRank(ms, mode = 'solo') {
   return data
 }
 
-export async function submitScore(name, ms, country, linkedin, mode = 'solo', cause, detail) {
+export async function submitScore(name, ms, country, linkedin, facebook, mode = 'solo', cause, detail) {
   const { data, error } = await supabase.rpc('submit_button_score', {
     p_name: name,
     p_ms: ms,
     p_country: country || null,
     p_linkedin: linkedin || null,
+    p_facebook: facebook || null,
     p_mode: mode,
     p_cause: cause || null,
     p_detail: detail || null,

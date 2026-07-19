@@ -364,7 +364,7 @@ body {
 }
 .linkedin-input:focus { outline: 2px solid var(--accent); border-color: transparent; }
 
-.li-badge {
+.li-badge, .fb-badge {
   display: inline-block;
   background: #0a66c2;
   color: #fff;
@@ -375,6 +375,11 @@ body {
   margin-left: 6px;
   text-decoration: none;
   vertical-align: middle;
+}
+.fb-badge {
+  background: #1877f2;
+  font-family: Georgia, 'Times New Roman', serif;
+  padding: 1px 7px 2px;
 }
 .post-row input {
   flex: 1;
