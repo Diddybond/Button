@@ -467,18 +467,20 @@ export default function App() {
 
   // Escalating mischief, driven by elapsed time: slow drift from 10s,
   // slow shrink from 20s, both creeping up the longer you hold.
-  // At 7 minutes AND again at 10 minutes the button steps down another 10%
-  // in size and speeds its drift up by 10% (phase ramps keep the motion
-  // continuous — no teleporting).
+  // At 7, 10 AND 13 minutes the button steps down another 10% in size and
+  // speeds its drift up by 10% (phase ramps keep the motion continuous —
+  // no teleporting).
   const s = elapsed / 1000
   const over7 = Math.max(0, s - 420)
   const over10 = Math.max(0, s - 600)
+  const over13 = Math.max(0, s - 780)
   const driftAmp = s > 10 ? Math.min((s - 10) * 0.9, 80) : 0
-  const driftX = driftAmp * Math.sin(s * 0.5 + over7 * 0.05 + over10 * 0.05)
-  const driftY = driftAmp * 0.7 * Math.sin(s * 0.34 + over7 * 0.034 + over10 * 0.034 + 2)
+  const driftX = driftAmp * Math.sin(s * 0.5 + over7 * 0.05 + over10 * 0.05 + over13 * 0.05)
+  const driftY = driftAmp * 0.7 * Math.sin(s * 0.34 + over7 * 0.034 + over10 * 0.034 + over13 * 0.034 + 2)
   const lateShrink = over7 > 0 ? Math.max(0.9, 1 - over7 * 0.01) : 1
   const late10Shrink = over10 > 0 ? Math.max(0.9, 1 - over10 * 0.01) : 1
-  const scale = (s > 20 ? Math.max(1 - (s - 20) * 0.0016, 0.7) : 1) * lateShrink * late10Shrink
+  const late13Shrink = over13 > 0 ? Math.max(0.9, 1 - over13 * 0.01) : 1
+  const scale = (s > 20 ? Math.max(1 - (s - 20) * 0.0016, 0.7) : 1) * lateShrink * late10Shrink * late13Shrink
 
   // Gravity gag: the button sinks toward the floor and climbs back over 5s.
   // Follow it down or slip. Uses the same slip detection as everything else.
